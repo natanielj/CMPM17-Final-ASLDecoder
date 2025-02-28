@@ -35,3 +35,12 @@ for idx, image_path in enumerate(imgs):
 
 plt.tight_layout()  # Adjust spacing between subplots
 plt.show()
+
+
+class CNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.linear1 = nn.Linear(100, 200)
+        self.linear2 = nn.Linear(200, 300)
+        self.linear3 = nn.
