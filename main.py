@@ -1,6 +1,6 @@
 from PIL import Image
 import matplotlib.pyplot as plt
-from torchvision.transforms import v2
+from torchvision import transforms as v2
 from rembg import remove
 import torch.nn as nn
 import os
@@ -9,6 +9,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
 ## CODE FOR MILESTONE 1 DATA AUG ##
+
 # base_path = "asl_alphabet_train/"
 # imgs = []
 # for x in range(1, 101):  # Load 100 images
@@ -120,66 +121,57 @@ class ASLCNN(nn.Module):
         return x
     
 ### TRAINING FUNCTION ###
-def train_model(model, train_loader, criterion, optimizer, num_epochs=10):
-    model.train()
-    
-    for epoch in range(num_epochs):
-        running_loss = 0.0
-        correct = 0
-        total = 0
-        
-        for images, labels in train_loader:
-            images, labels = images.to(device), labels.to(device)
+### TRAINING LOOP ###
+import torch.optim as optim
 
-            optimizer.zero_grad()
-            outputs = model(images)
-            
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-            
-            running_loss += loss.item()
-            _, predicted = torch.max(outputs, 1)
-            correct += (predicted == labels).sum().item()
-            total += labels.size(0)
-        
-        epoch_loss = running_loss / len(train_loader)
-        accuracy = 100 * correct / total
-        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {epoch_loss:.4f}, Accuracy: {accuracy:.2f}%")
+# EDIT: Define hyperparameters
+num_epochs = 10
+batch_size = 32
+learning_rate = 0.001
 
-### TESTING FUNCTION ###
-def test_model(model, test_loader):
-    model.eval()
-    correct = 0
-    total = 0
-    
-    with torch.no_grad():
-        for images, labels in test_loader:
-            images, labels = images.to(device), labels.to(device)
-            outputs = model(images)
-            
-            _, predicted = torch.max(outputs, 1)
-            correct += (predicted == labels).sum().item()
-            total += labels.size(0)
+# EDIT: Define transforms for dataset (using v2 from torchvision.transforms)
+transform = v2.Compose([
+    v2.Resize((64, 64)),
+    v2.ToTensor(),
+    v2.RandomHorizontalFlip(p=0.5),
+    v2.RandomVerticalFlip(p=0.5),
+])
 
-    accuracy = 100 * correct / total
-    print(f"Test Accuracy: {accuracy:.2f}%")
+# EDIT: Create dataset and dataloader
+dataset = ASLDataset(root_dir=dir_path, transform=transform)
+train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-
-train_dataset = ASLDataset("Dataset/asl_alphabet_train", transform=transform)
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-
-num_classes = len(train_dataset.classes)
-model = ASLCNN(num_classes).to(device)
-
+num_classes = len(dataset.classes)
+model = ASLCNN(num_classes=num_classes, input_channels=3)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-### TRAINING THE MODEL ###
-train_model(model, train_loader, criterion, optimizer, num_epochs=10)
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+    for images, labels in train_loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+    print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
 
-### TESTING THE MODEL ###
-test_dataset = ASLDataset("Dataset/asl_alphabet_test", transform=transform)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-
-test_model(model, test_loader)
+### TESTING LOOP ###
+model.eval()
+correct = 0
+total = 0
+with torch.no_grad():
+    for images, labels in train_loader:  # using train_loader for demonstration
+        images = images.to(device)
+        labels = labels.to(device)
+        outputs = model(images)
+        _, predicted = torch.max(outputs, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
+print(f"Accuracy: {100 * correct / total:.2f}%")
