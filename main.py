@@ -124,12 +124,12 @@ class ASLCNN(nn.Module):
 ### TRAINING LOOP ###
 import torch.optim as optim
 
-# EDIT: Define hyperparameters
+#  Define hyperparameters
 num_epochs = 10
 batch_size = 32
 learning_rate = 0.001
 
-# EDIT: Define transforms for dataset (using v2 from torchvision.transforms)
+# Define transforms for dataset (using v2 from torchvision.transforms)
 transform = v2.Compose([
     v2.Resize((64, 64)),
     v2.ToTensor(),
@@ -137,7 +137,7 @@ transform = v2.Compose([
     v2.RandomVerticalFlip(p=0.5),
 ])
 
-# EDIT: Create dataset and dataloader
+# Create dataset and dataloader
 dataset = ASLDataset(root_dir=dir_path, transform=transform)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
