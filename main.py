@@ -55,7 +55,7 @@ class ASLDataset(Dataset):
         self.transform = transform
 
         # List class names (each subdirectory is assumed to be a class)
-        self.classes = os.listdir(root_dir)
+        self.classes = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
             ## Code from: https://pynative.com/python-list-files-in-a-directory/#:~:text=sample.txt'%5D-,os.,all%20of%20its%20subdirectories%2Fsubfolders.
         
         # Create a mapping from class name to a numeric label
@@ -72,29 +72,37 @@ class ASLDataset(Dataset):
                     self.directory[os.path.join(class_dir, file)]= self.class_to_idx[class_name]
 
 
-    def dataAugment(self,noOfFiles=1,idx=1):
-        img, _ = self.__getitem__(idx)
-        x = Image.open(ASLDataset[idx][0])
-        for i in range(noOfFiles):
-            y = transforms(x)
-            y.save(f"Dataset/asl_alphabet_train/DA{i}.jpg")
-
-        transforms = v2.Compose([
-            v2.ToTensor(),  # Converts PIL image to PyTorch tensor (C, H, W)
+    def dataAugment(self, noOfFiles=1, idx=1):
+        file_path = list(self.directory.keys())[idx]
+        from torchvision.io import read_image
+        original_img = read_image(file_path).float() / 255.0  
+        augment_transform = v2.Compose([
+            v2.Resize((64, 64)),
             v2.RandomHorizontalFlip(p=0.5),
             v2.RandomVerticalFlip(p=0.5),
         ])
+        to_pil = v2.ToPILImage()
+        for i in range(noOfFiles):
+            augmented = augment_transform(original_img)
+            augmented_img = to_pil(augmented)
+            augmented_img.save(f"Dataset/asl_alphabet_train/DA_{i}.jpg")
 
     def __len__(self):
         return len(self.directory)
     
-    def __getitem__(self,idx):
-        return list(self.directory)[idx]
+    def __getitem__(self, idx):
+        file_path = list(self.directory.keys())[idx]
+        from torchvision.io import read_image  
+        image = read_image(file_path).float() / 255.0
+        if self.transform:
+            image = self.transform(image)
+        label = self.directory[file_path]
+        return image, label
         
         
 ### MODEL CLASS ###
 class ASLCNN(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes, input_channels=3):
         super(ASLCNN, self).__init__()
         
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1)
@@ -103,10 +111,9 @@ class ASLCNN(nn.Module):
         self.conv4 = nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3, padding=1)
         
         self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(2, 2)  # Downsample the feature maps
+        self.pool = nn.MaxPool2d(2, 2) 
         
-        # Fully connected layers
-        self.fc1 = nn.Linear(256 * 14 * 14, 512)  # Assuming input images are 224x224
+        self.fc1 = nn.Linear(256 * 4 * 4, 512)
         self.fc2 = nn.Linear(512, num_classes)
 
     def forward(self, x):
@@ -124,7 +131,7 @@ class ASLCNN(nn.Module):
 ### TRAINING LOOP ###
 import torch.optim as optim
 
-#  Define hyperparameters
+#  Define parameters
 num_epochs = 10
 batch_size = 32
 learning_rate = 0.001
@@ -132,7 +139,6 @@ learning_rate = 0.001
 # Define transforms for dataset (using v2 from torchvision.transforms)
 transform = v2.Compose([
     v2.Resize((64, 64)),
-    v2.ToTensor(),
     v2.RandomHorizontalFlip(p=0.5),
     v2.RandomVerticalFlip(p=0.5),
 ])
@@ -142,7 +148,7 @@ dataset = ASLDataset(root_dir=dir_path, transform=transform)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 num_classes = len(dataset.classes)
-model = ASLCNN(num_classes=num_classes, input_channels=3)
+model = ASLCNN(num_classes=num_classes)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 criterion = nn.CrossEntropyLoss()
@@ -167,7 +173,7 @@ model.eval()
 correct = 0
 total = 0
 with torch.no_grad():
-    for images, labels in train_loader:  # using train_loader for demonstration
+    for images, labels in train_loader: 
         images = images.to(device)
         labels = labels.to(device)
         outputs = model(images)
