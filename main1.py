@@ -9,24 +9,27 @@ import os
 # Directory for dataset
 dir_path = 'Dataset/asl_alphabet_train'
 
+# Class for dataset
 class ASLDataset(Dataset):
     def __init__(self, root_dir, transform=None):
+
+        # Basic Definition
         self.root_dir = root_dir
         self.transform = transform
-        # Only consider directories (classes)
         self.classes = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
         self.class_to_idx = {class_name: idx for idx, class_name in enumerate(self.classes)}
-        # Build lists of image paths and labels
         self.image_paths, self.labels = [], []
+
+        # Getting labels from file directory
         for class_name in self.classes:
             class_dir = os.path.join(root_dir, class_name)
             for file in os.listdir(class_dir):
                 if file.lower().endswith(('.jpg', '.jpeg', '.png')):
                     self.image_paths.append(os.path.join(class_dir, file))
                     self.labels.append(self.class_to_idx[class_name])
-
-    def dataAugment(self, noOfFiles=1, idx=0):
-        # Load image as tensor and normalize to [0, 1]
+                    
+    def dataAugmentation(self,noOfFiles,idx):
+        #Data Augmentation
         original_img = read_image(self.image_paths[idx]).float() / 255.0
         augment_transform = v2.Compose([
             v2.Resize((64, 64)),
@@ -51,6 +54,7 @@ class ASLDataset(Dataset):
         label = self.labels[idx]
         return image, label
 
+# Class for CNN model defination
 class ASLCNN(nn.Module):
     def __init__(self, num_classes, input_channels=3):
         super(ASLCNN, self).__init__()
@@ -60,7 +64,6 @@ class ASLCNN(nn.Module):
         self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2)
-        # For 64x64 inputs, four poolings reduce spatial size to 4x4
         self.fc1 = nn.Linear(256 * 4 * 4, 512)
         self.fc2 = nn.Linear(512, num_classes)
 
@@ -79,13 +82,14 @@ num_epochs = 10
 batch_size = 32
 learning_rate = 0.001
 
-# Transformation for tensor images (no need for ToTensor)
+# Transformation for tensor images
 transform = v2.Compose([
     v2.Resize((64, 64)),
     v2.RandomHorizontalFlip(p=0.5),
     v2.RandomVerticalFlip(p=0.5),
 ])
 
+# Model instanciation
 dataset = ASLDataset(root_dir=dir_path, transform=transform)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 num_classes = len(dataset.classes)

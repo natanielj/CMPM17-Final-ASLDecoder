@@ -2,3 +2,5 @@
 /asl_alphabet_train
 /.venv
 /venv
+/Dataset/asl_alphabet_train
+/Dataset/asl_alphabet_test
