@@ -7,7 +7,7 @@ import torch
 import os
 
 # Directory for dataset
-dir_path = 'Dataset/asl_alphabet_train'
+dir_path = './asl_alphabet_train'
 
 class ASLDataset(Dataset):
     def __init__(self, root_dir, transform=None):
