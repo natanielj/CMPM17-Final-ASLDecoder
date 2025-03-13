@@ -1,10 +1,11 @@
-from torchvision import transforms as v2
+from torchvision import transforms
 from torchvision.io import read_image
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 import torch
 import os
+import random
 
 # Directory for dataset
 dir_path = './asl_alphabet_train'
@@ -16,9 +17,17 @@ class ASLDataset(Dataset):
         # Basic Definition
         self.root_dir = root_dir
         self.transform = transform
-        self.classes = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))]
+
+        # More details on how this code works in engineering notebook
+        # Get's the list of all the folders under the main directory
+        self.classes = [d for d in os.listdir(root_dir) if os.path.isdir(os.path.join(root_dir, d))] 
+        #   Code is from:  https://www.geeksforgeeks.org/python-list-files-in-a-directory/
+
+        #Enumerating the code
         self.class_to_idx = {class_name: idx for idx, class_name in enumerate(self.classes)}
-        self.image_paths, self.labels = [], []
+
+        # Getting the main file paths and their labels
+        self.image_paths, self.labels, self.char = [], [], []
 
         # Getting labels from file directory
         for class_name in self.classes:
@@ -27,21 +36,30 @@ class ASLDataset(Dataset):
                 if file.lower().endswith(('.jpg', '.jpeg', '.png')):
                     self.image_paths.append(os.path.join(class_dir, file))
                     self.labels.append(self.class_to_idx[class_name])
-                    
-    def dataAugmentation(self,noOfFiles,idx):
-        #Data Augmentation
-        original_img = read_image(self.image_paths[idx]).float() / 255.0
-        augment_transform = v2.Compose([
-            v2.Resize((64, 64)),
-            v2.RandomHorizontalFlip(p=0.5),
-            v2.RandomVerticalFlip(p=0.5),
-        ])
-        # Convert tensor to PIL image for saving
-        to_pil = v2.ToPILImage()
-        for i in range(noOfFiles):
-            augmented = augment_transform(original_img)
-            augmented_img = to_pil(augmented)
-            augmented_img.save(f"Dataset/asl_alphabet_train/DA_{i}.jpg")
+                    self.char.append(class_name)
+
+        for i in range(0,len(self.image_paths)):
+
+            if random.choice([True, False, False, False, False, False, False, False]):
+
+            #Data Augmentation function definition
+                original_img = read_image(self.image_paths[i]).float() / 255.0
+                augment_transform = transforms.Compose([
+                    transforms.Resize((64, 64)),
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.RandomVerticalFlip(p=0.5),
+                ])
+
+                # Convert tensor to PIL image for saving
+                to_pil = transforms.ToPILImage()
+                for j in range(5):
+                    augmented = augment_transform(original_img)
+                    augmented_img = to_pil(augmented)
+                    augmeneted_img_path = f"Dataset/asl_alphabet_train/{self.char[i]}/DA_{j}.jpg"
+                    augmented_img.save(augmeneted_img_path)
+                    self.image_paths.append(augmeneted_img_path)
+                    self.labels.append(self.class_to_idx[self.char[i]])
+                    self.char.append(self.char[i])
 
     def __len__(self):
         return len(self.image_paths)
@@ -81,13 +99,6 @@ class ASLCNN(nn.Module):
 num_epochs = 10
 batch_size = 32
 learning_rate = 0.001
-
-# Transformation for tensor images
-transform = v2.Compose([
-    v2.Resize((64, 64)),
-    v2.RandomHorizontalFlip(p=0.5),
-    v2.RandomVerticalFlip(p=0.5),
-])
 
 # Model instanciation
 dataset = ASLDataset(root_dir=dir_path, transform=transform)

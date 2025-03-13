@@ -3,3 +3,5 @@
 /venv
 /Dataset/asl_alphabet_train
 /Dataset/asl_alphabet_test
+requirments.txt
+test.ipynb
