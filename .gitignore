@@ -1,8 +1,8 @@
 /Dataset
 /.venv
 /venv
-/Dataset/asl_alphabet_train
-/Dataset/asl_alphabet_test
+/asl_alphabet_train
+/asl_alphabet_test
 /requirments.txt
 /test.ipynb
 /main.py

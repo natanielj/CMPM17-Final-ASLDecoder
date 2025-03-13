@@ -8,7 +8,7 @@ import os
 import random
 
 # Directory for dataset
-dir_path = './asl_alphabet_train'
+dir_path = '/asl_alphabet_train'
 
 # Class for dataset
 class ASLDataset(Dataset):
@@ -77,13 +77,13 @@ class ASLCNN(nn.Module):
     def __init__(self, num_classes, input_channels=3):
         super(ASLCNN, self).__init__()
         self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2)
-        self.fc1 = nn.Linear(256 * 4 * 4, 512)
-        self.fc2 = nn.Linear(512, num_classes)
+        self.fc1 = nn.Linear(256 * 4 * 4, 64)
+        self.fc2 = nn.Linear(64, num_classes)
 
     def forward(self, x):
         x = self.pool(self.relu(self.conv1(x)))
@@ -101,7 +101,7 @@ batch_size = 32
 learning_rate = 0.001
 
 # Model instanciation
-dataset = ASLDataset(root_dir=dir_path, transform=transform)
+dataset = ASLDataset(root_dir=dir_path, transform=transforms)
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 num_classes = len(dataset.classes)
 model = ASLCNN(num_classes=num_classes)
@@ -127,7 +127,7 @@ for epoch in range(num_epochs):
 
 
 #Filtering testing data
-images = os.listdir("/Dataset/asl_alphabet_test")
+images = os.listdir("/asl_alphabet_test")
 labels = []
 for i in images:
     labels.append(i[0])
