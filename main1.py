@@ -124,14 +124,21 @@ for epoch in range(num_epochs):
         running_loss += loss.item()
     print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
 
+
+
+#Filtering testing data
+images = os.listdir("/Dataset/asl_alphabet_test")
+labels = []
+for i in images:
+    labels.append(i[0])
+
 # Testing loop
 model.eval()
 correct, total = 0, 0
 with torch.no_grad():
-    for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
-        outputs = model(images)
-        _, predicted = torch.max(outputs, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+    images, labels = images.to(device), labels.to(device)
+    outputs = model(images)
+    _, predicted = torch.max(outputs, 1)
+    total += labels.size(0)
+    correct += (predicted == labels).sum().item()
 print(f"Accuracy: {100 * correct / total:.2f}%")
