@@ -124,7 +124,7 @@ batch_size = 32
 learning_rate = 0.001
 
 # Model instanciation
-dataset = ASLDataset(transform=transforms)
+dataset = ASLDataset()
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 num_classes = len(dataset.classes)
 model = ASLCNN(num_classes=num_classes)
