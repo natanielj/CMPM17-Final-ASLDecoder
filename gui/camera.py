@@ -74,6 +74,12 @@ class CameraApp(QObject):
     def fitInView(self, rect, aspectRatioMode):
         self.graphicsView.fitInView(rect, aspectRatioMode)
 
+    def capturePhoto(self, filename="temp_image_in.png"):
+        if self.scenePixmapItem is not None:
+            current_pixmap = self.scenePixmapItem.pixmap()
+            current_pixmap.save(filename, "PNG")
+            print(f"Photo saved to {filename}")
+
 
 if __name__ == "__main__":
     app = QApplication([])
