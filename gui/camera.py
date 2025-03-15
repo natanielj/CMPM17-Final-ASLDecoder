@@ -28,7 +28,7 @@ class CameraWorker(QObject):
         self.running = False
 
 # In your main application class
-class MainApplication(QObject):
+class CameraApp(QObject):
     def __init__(self):
         super().__init__()
         self.thread = QThread()
@@ -53,7 +53,7 @@ class MainApplication(QObject):
             frame.data,
             frame.shape[1],
             frame.shape[0],
-            QImage.Format.Format_BGR888,
+            QImage.Format.Format_RGB888,
         )
         pixmap = QPixmap.fromImage(image)
 
@@ -77,6 +77,6 @@ class MainApplication(QObject):
 
 if __name__ == "__main__":
     app = QApplication([])
-    window = MainApplication()
+    window = CameraApp()
     app.exec()
     window.stopCamera()
