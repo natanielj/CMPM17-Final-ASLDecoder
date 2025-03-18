@@ -8,6 +8,7 @@ import os
 import random
 from PIL import Image
 from torchvision.transforms.functional import to_pil_image
+# import wandb
 # Directory for dataset
 dir_path = './asl_alphabet_train'
 
@@ -85,6 +86,7 @@ class ASLDataset(Dataset):
         return image, torch.tensor(label, dtype=torch.long)
 
 # Class for CNN model defination
+
 class ASLCNN(nn.Module):
     def __init__(self, num_classes, input_channels=3):
         super(ASLCNN, self).__init__()
@@ -125,7 +127,7 @@ dataset = ASLDataset()
 train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 num_classes = len(dataset.classes)
 model = ASLCNN(num_classes=num_classes)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda")
 model.to(device)
 
 criterion = nn.CrossEntropyLoss()
@@ -140,29 +142,58 @@ for epoch in range(num_epochs):
         optimizer.zero_grad()
         loss = criterion(model(images), labels)
         loss.backward()
-        optimizer.step()
         running_loss += loss.item()
     print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
 
+torch.save(model.state_dict(), "./aslmodel")
+
+
 #Filtering testing data
-images = os.listdir("/asl_alphabet_test")
+images = os.listdir("./asl_alphabet_test")
 real_images = []
 labels = []
 for i in images:
-
     labels.append(i[0])
-    Image.open(i).convert('RGB')
-    
+    img_path = os.path.join(images, i)
+    img = Image.open(img_path).convert('RGB') 
     z = v2.Compose([
         v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True),
         v2.Resize((200, 200)),
         v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
-
-    real_images.append(z(i))
+    real_images.append(z(img))
 
 real_images = torch.stack(real_images)
+
+# # Start a new wandb run to track this script.
+# run = wandb.init(
+#     # Set the wandb entity where your project will be logged (generally your team name).
+#     entity="pysigns",
+#     # Set the wandb project where this run will be logged.
+#     project="asl-decoder",
+#     # Track hyperparameters and run metadata.
+#     config={
+#         "learning_rate": 0.01,
+#         "architecture": "CNN",
+#         "dataset": "ASL Alphabet",
+#         "epochs": 10,
+#     },
+# )
+
+# # Simulate training.
+# epochs = 10
+# offset = random.random() / 5
+# for epoch in range(2, epochs):
+#     acc = 1 - 2**-epoch - random.random() / epoch - offset
+#     loss = 2**-epoch + random.random() / epoch + offset
+
+#     # Log metrics to wandb.
+#     run.log({"acc": acc, "loss": loss})
+
+# # Finish the run and upload any remaining data.
+# run.finish()
+
 
 # Testing loop
 model.eval()
@@ -174,3 +205,7 @@ with torch.no_grad():
     total += labels.size(0)
     correct += (predicted == labels).sum().item()
 print(f"Accuracy: {100 * correct / total:.2f}%")
+
+
+sd = model.state_dict()
+torch.save(model.state_dict(), "./aslmodel")

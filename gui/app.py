@@ -35,26 +35,28 @@ class MainApp(QMainWindow):
         super(MainApp, self).__init__() 
         self.setWindowTitle("Simple ASL Decoder")
 
-        self.stack = QStackedWidget()
+        self.stack = QStackedWidget(self)
+        self.startStack = QWidget()
+        self.resultStack = QWidget()
         self.setCentralWidget(self.stack)
 
         self.start = startWindow()
         self.result = ResultsWindow()
 
-        self.stack.addWidget(self.start)
-        self.stack.addWidget(self.result)
+        self.stack.addWidget(self.startStack)
+        self.stack.addWidget(self.resultStack)
 
-        self.startWindow.readButton.clicked.connect(self.showResults)
+        self.startWindow.readButton.clicked.connect(self.result)
         
 
     def showResults(self):
         self.stack.setCurrentWidget(self.start)
 
-    # def closeEvent(self, event):
-    #     # Handle the close event
-    #     print("Closing the application...")
-    #     remove('temp_image_in.png')
-    #     event.accept()
+    def closeEvent(self, event):
+        # Handle the close event
+        print("Closing the application...")
+        remove('temp_image_in.png')
+        event.accept()
 
 
 if __name__ == '__main__':
