@@ -9,14 +9,14 @@ import random
 from PIL import Image
 from torchvision.transforms.functional import to_pil_image
 # Directory for dataset
-dir_path = 'Dataset/asl_alphabet_train'
+dir_path = './asl_alphabet_train'
 
 # Class for dataset
 class ASLDataset(Dataset):
     def __init__(self, transform=None):
 
         # Basic Definition
-        self.root_dir = 'Dataset/asl_alphabet_train'
+        self.root_dir = './asl_alphabet_train'
         self.transform = transform
 
         # More details on how this code works in engineering notebook
@@ -39,7 +39,7 @@ class ASLDataset(Dataset):
                     self.labels.append(self.class_to_idx[class_name])
                     self.char.append(class_name)
 
-        for i in range(0,len(self.image_paths)):
+        for i in range(0,(len(self.image_paths) // 2)):
 
             if random.choice([True, False, False, False, False, False, False, False]):
 
@@ -48,16 +48,14 @@ class ASLDataset(Dataset):
                 trip = v2.Compose([
                     # transforms.Resize(200, 200),
                     v2.ToImage(),
-                    v2.RandomHorizontalFlip(p=0.5),
                     v2.RandomVerticalFlip(p=0.5),
-                    v2.ToImage(),
                     v2.ToDtype(torch.float32, scale=True),
                     v2.Normalize(mean=[0.485, 0.465, 0.406], std=[0.229, 0.224, 0.225])
                 ])
 
                 # Convert tensor to PIL image for saving
 
-                for j in range(5):
+                for j in range(2):
                     aug = trip(original_img)
                     augmented = to_pil_image(aug)
                     augmeneted_img_path = f"asl_alphabet_train/{self.char[i]}/DA_{j}.jpg"
@@ -67,7 +65,7 @@ class ASLDataset(Dataset):
                     self.char.append(self.char[i])
 
     def __len__(self):
-        return len(self.image_paths)
+        return (len(self.image_paths) // 2)
 
     def __getitem__(self, idx):
     # Load image
@@ -97,9 +95,9 @@ class ASLCNN(nn.Module):
 
         # input_channels = b2tf(input_channels)
         self.conv1 = nn.Conv2d(input_channels, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
-        self.conv4 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2)
         self.fc1 = nn.Linear(256 * 12 * 12, 512)
